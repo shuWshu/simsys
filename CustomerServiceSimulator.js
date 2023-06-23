@@ -2,6 +2,7 @@
 const VISIT_RATE = 0.4; //各コマでの来客率
 const CPS = 3; //1秒間に何コマ進むか
 const VISITROS_SHOW = 10; //順番待ちの描画数
+const PAYERS_SHOW = 5;
 
 // --------- class ---------------
 
@@ -139,7 +140,7 @@ function eatingEnd(seatConfiguration, payers, time){
 
 // --------- draw function -------
 //客描画情報の更新
-function PeopleViewUpdate(visitors, seatConfiguration){
+function PeopleViewUpdate(visitors, seatConfiguration, payers){
     //席の表示
     for(const [index, seat] of seatConfiguration.entries()){ //各座席につき
         const desk = document.querySelector("#desk"+seat.maxNum+"_"+index);
@@ -170,8 +171,16 @@ function PeopleViewUpdate(visitors, seatConfiguration){
     let state = 0;
     const customers = visitors[VISITROS_SHOW];
     if(customers){ state = 1; } //人が居るなら
-    const visitor = document.querySelector("#visitor").querySelector(".moreHuman");
-    colorReset(visitor, state); //カラーのリセット
+    const visitorView = document.querySelector("#visitor").querySelector(".moreHuman");
+    colorReset(visitorView, state); //カラーのリセット
+    //会計待ちの客の表示
+    for(let i = 0; i < PAYERS_SHOW; ++i){ //描画最大数まで処理
+        const payer = payers[i];
+        let state = 0;
+        if(payer){ state = 1; }//人が居るなら行う
+        const payerView = document.querySelector("#payer").querySelector(".humanP"+i);
+        colorReset(payerView, state); //カラーのリセット
+    }
 }
 
 function timerViewUpdate(time){
@@ -211,7 +220,7 @@ function setup(){
 
     worldTime = 0; //シミュレータ内の時間 単位はコマ
 
-    PeopleViewUpdate(visitors, seatConfiguration);
+    PeopleViewUpdate(visitors, seatConfiguration, payers);
     timerViewUpdate(worldTime);
 }
 
@@ -228,7 +237,7 @@ function main(){ //メインの処理
         // console.log("visit!")
     }
     eatingEnd(seatConfiguration, payers, worldTime);
-    PeopleViewUpdate(visitors, seatConfiguration); //描画更新
+    PeopleViewUpdate(visitors, seatConfiguration, payers); //描画更新
     timerViewUpdate(worldTime);
 
 
