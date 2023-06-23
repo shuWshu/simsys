@@ -7,37 +7,31 @@ body{
     position: relative;
     top:10px;
     left:10px;
-    background-color: inherit;
 }
 .human1 {
     position: relative;
     top: 10px;
     left:40px;
-    background-color: inherit;
 }
 .human2 {
     position: relative;
     top: 45px;
     left:10px;
-    background-color: inherit;
 }
 .human3 {
     position: relative;
     top: 45px;
     left:40px;
-    background-color: inherit;
 }
 .human4 {
     position: relative;
     top: 10px;
     left:70px;
-    background-color: inherit;
 }
 .human5 {
     position: relative;
     top: 45px;
     left:70px;
-    background-color: inherit;
 }
 
 /* 描画用基本図形 */
@@ -88,7 +82,7 @@ body{
 
 /* 色設定クラス */
 .color0{
-    background-color: black;
+    background-color: gray;
 }
 .color1{
     background-color: white;

@@ -108,18 +108,21 @@ function takeOrders(customers, cookingList){
 //席の更新
 function PeopleViewUpdate(seatConfiguration){
     for(const [index, seat] of seatConfiguration.entries()){ //各座席につき
-        const element = document.querySelector("#desk"+seat.maxNum+"_"+index);
-        // console.log(element);
-        if(element.classList.contains('color0')){
-            element.classList.remove("color0");
-            element.classList.add("color"+seat.state);
-        }else if(element.classList.contains('color1')){
-            element.classList.remove("color1");
-            element.classList.add("color"+seat.state);
-        }else if(element.classList.contains('color2')){
-            element.classList.remove("color2");
-            element.classList.add("color"+seat.state);
+        const desk = document.querySelector("#desk"+seat.maxNum+"_"+index);
+        console.log(desk);
+        for(let i = 0; i < seat.maxNum; ++i){
+            const human = desk.querySelector(".human"+i);
+            //console.log(human);
+            let state = seat.state;
+            if(i >= seat.num){ state = 0 }; //座っている人数に合わせる
+            //カラーのリセット
+            human.classList.remove("color0");
+            human.classList.remove("color1");
+            human.classList.remove("color2");
+            human.classList.add("color"+state); //正しい色の追加
         }
+        
+        
     }
 }
 
@@ -177,3 +180,4 @@ function main(){ //メインの処理
 }
 setup();
 setInterval(main, 1000 / CPS); //繰り返し実行
+//PeopleViewUpdate(seatConfiguration);
