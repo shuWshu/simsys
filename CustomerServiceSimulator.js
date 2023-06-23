@@ -1,6 +1,6 @@
 // --------- parameter -----------
 const VISIT_RATE = 0.4; //各コマでの来客率
-const CPS = 1; //1秒間に何コマ進むか
+const CPS = 3; //1秒間に何コマ進むか
 const VISITROS_SHOW = 10; //順番待ちの描画数
 
 // --------- class ---------------
@@ -38,7 +38,7 @@ class Customer{ //客
         this.eatingTime = eatingTime; //食事時間
     }
 }
-//案内待ちグループの定義
+//客グループリストの定義
 const visitors = []; //案内待ちのグループ
 
 //席の情報の定義
@@ -47,8 +47,9 @@ class Seat{ //席
         this.maxNum = maxNum; //客の収容人数
         this.num = 0; //今いる客の数
         this.visitors = []; //客の内訳
-        this.state = 0; //客の状態 0:居ない, 1:配膳待, 2:食事中
+        this.state = 0; //席の状態 0:居ない, 1:配膳待, 2:食事中, 3:片付け待ち
         this.maxEatingTime = 0; //食事時間最大
+        this.startEatingTime = 0; //食事開始時間
     }
     sit(customers, num){// 客が座る時の処理
         this.num = num;
@@ -57,6 +58,11 @@ class Seat{ //席
             this.visitors.push(customer);
             this.maxEatingTime = Math.max(this.maxEatingTime, customer.eatingTime);
         }
+    }
+    eatStart(time){
+        this.state = 2; //席状態を変更
+        this.startEatingTime = time;
+        //console.log("start:"+this.startEatingTime+", max:"+this.maxEatingTime)
     }
 }
 const seatConfiguration = []; //座席のリスト
@@ -76,7 +82,7 @@ function visitCustomerNumN(visitors, num){
         const eatingTime = Math.floor(Math.random() * 22) + 24; //24~45
         const customer = new Customer(order, eatingTime);
         group.push(customer);
-        console.log(order, eatingTime);
+        //console.log(order, eatingTime);
     }
     visitors.push(group);
 }
@@ -92,10 +98,12 @@ function directToSeat(visitors, seatConfiguration, cookingList){
             seat.sit(visitors[0], num);
             takeOrders(visitors[0], cookingList);
             visitors.shift(); //先頭の客を削除
+
+            seat.eatStart(worldTime); //TODO:席配置時に食事スタート
             return index;
         }
     }
-    return -2;
+    return -2; //座れない
 }
 
 //注文を取る処理
@@ -105,6 +113,19 @@ function takeOrders(customers, cookingList){
     cookingList.push(groupOrder); //グループ注文をリストに保存
 }
 
+//食事終了処理
+function eatingEnd(seatConfiguration, time){
+    for(const [index, seat] of seatConfiguration.entries()){ //各座席について index:インデックス seat:席そのもの
+        if(seat.state == 2){ //食事中の場合
+            if((time - seat.startEatingTime) == seat.maxEatingTime){//食事終了
+                //console.log("eat end:"+index);
+                
+            }
+        }
+    }
+}
+
+// --------- draw function -------
 //客描画情報の更新
 function PeopleViewUpdate(visitors, seatConfiguration){
     for(const [index, seat] of seatConfiguration.entries()){ //各座席につき
@@ -180,9 +201,9 @@ function setup(){
 }
 
 function main(){ //メインの処理
-    console.log(worldTime);
+    console.log("time:"+worldTime);
     //客案内
-    console.log(directToSeat(visitors, seatConfiguration, cookingList));
+    directToSeat(visitors, seatConfiguration, cookingList);
 
     //自動処理部分
     //確率で来客
@@ -191,10 +212,9 @@ function main(){ //メインの処理
         visitCustomerNumN(visitors, num);
         // console.log("visit!")
     }
-    
+    eatingEnd(seatConfiguration, worldTime);
     PeopleViewUpdate(visitors, seatConfiguration); //描画更新
     timerViewUpdate(worldTime);
-    console.log(visitors);
 
 
     worldTime += 1;
