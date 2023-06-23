@@ -1,36 +1,39 @@
 // --------- parameter -----------
-const VISIT_RATE = 0.4; //各コマでの来客率
-const CPS = 3; //1秒間に何コマ進むか
+const VISIT_RATE = 0; //各コマでの来客率
+const CPS = 1; //1秒間に何コマ進むか
 const VISITROS_SHOW = 10; //順番待ちの描画数
 const PAYERS_SHOW = 5;
 
 // --------- class ---------------
-
+//注文
 class Order{
     constructor(menuA, menuB){
         this.menuA = menuA;
         this.menuB = menuB;
     }
 }
-
 //グループ内の注文の合計
 class GroupOrder{
     constructor(){
         this.menuA = 0; //麺の量
         this.menuB = 0; //餃子の数
         this.num = 0; //人数
+        this.servedNum = 0; //配膳済人数
+        this.seatNo = 0;
     }
     add(customer){ //1人分のデータ追加
         this.menuA += customer.order.menuA;
         this.menuB += customer.order.menuB;
         this.num += 1;
     }
-    addGroup(customers){
+    addGroup(customers, seatNo){ //グループ丸々のデータ追加
         for(const customer of customers){
             this.add(customer);
         }
+        this.seatNo = seatNo;
     }
 }
+const groupOrderList = []; //調理中のグループ注文リスト 合計のオーダーが入ってる
 
 //客の定義
 class Customer{ //客
@@ -79,7 +82,7 @@ class Seat{ //席
 }
 const seatConfiguration = []; //座席のリスト
 
-const cookingList = []; //調理中のグループ注文リスト
+
 
 class CookingMenu{
     constructor(maxAmount, cookingTime){
@@ -123,17 +126,15 @@ function visitCustomerNumN(visitors, num){
 
 //座席に案内し，注文処理を呼び出す
 //返値:成功なら案内席のインデックス, 客が居ないなら-1, 席が空いていないなら-2
-function directToSeat(visitors, seatConfiguration, cookingList){
+function directToSeat(visitors, seatConfiguration, groupOrderList){
     if(!visitors.length){ return -1; } //客がいない
     const num = visitors[0].length; //先頭の客人数取得
     for(const [index, seat] of seatConfiguration.entries()){ //各座席について index:インデックス seat:席そのもの
         // 座れる場合
         if(num <= seat.maxNum && seat.state == 0){ //最大人数以下かつ座っていない
             seat.sit(visitors[0], num);
-            takeOrders(visitors[0], cookingList);
+            takeOrders(visitors[0], groupOrderList, index);
             visitors.shift(); //先頭の客を削除
-
-            seat.eatStart(worldTime); //TODO:席配置時に食事スタート
             return index;
         }
     }
@@ -141,10 +142,10 @@ function directToSeat(visitors, seatConfiguration, cookingList){
 }
 
 //注文を取る処理
-function takeOrders(customers, cookingList){
+function takeOrders(customers, groupOrderList, seatNo){
     const groupOrder = new GroupOrder(); //グループ内の注文合計
-    groupOrder.addGroup(customers); //グループ注文の計算
-    cookingList.push(groupOrder); //グループ注文をリストに保存
+    groupOrder.addGroup(customers, seatNo); //グループ注文の計算
+    groupOrderList.push(groupOrder); //グループ注文をリストに保存
 }
 
 //調理開始
@@ -162,10 +163,28 @@ function cookingEnd(cookingMenus, cookedMenus, time){
     for(const [index, cookingMenu] of cookingMenus.entries()){ //各調理中メニューについて
         if((time - cookingMenu.startCookingTime) == cookingMenu.cookingTime){
             cookedMenus[index] += cookingMenu.amount;
-            console.log(cookingMenu);
             cookingMenu.cooked();
-            console.log("cooking end");
-            console.log(cookedMenus);
+            //console.log("cooking end");
+        }
+    }
+}
+
+//配膳
+//先頭要素の1人分の配膳
+function serve(groupOrderList, cookedMenus, seatConfiguration){
+    for(const [index, groupOrder] of groupOrderList.entries()){
+        if(groupOrder.menuA <= cookedMenus[0] && groupOrder.menuB <= cookedMenus[1]){
+            groupOrder.servedNum += 1;
+            if(groupOrder.servedNum == groupOrder.num){ //配膳し終わった
+                cookedMenus[0] -= groupOrder.menuA;
+                cookedMenus[1] -= groupOrder.menuB;
+                seatConfiguration[groupOrder.seatNo].eatStart(worldTime); //TODO:席配置時に食事スタート
+                groupOrderList.shift();
+                console.log("served!");
+                return 0
+            }
+            console.log("served to "+groupOrder.seatNo+" : "+groupOrder.servedNum);
+            return groupOrder.num - groupOrder.servedNum;
         }
     }
 }
@@ -189,7 +208,7 @@ function account(payers){
 }
 
 //席の掃除
-//席リストを渡すとインデックスが若い席を掃除する
+//インデックスが若い席のみ掃除する
 function cleaning(seatConfiguration){
     for(const [index, seat] of seatConfiguration.entries()){ //各座席について index:インデックス seat:席そのもの
         if(seat.state == 3){ //席が片付け待ち
@@ -311,14 +330,15 @@ function setup(){
 
 function main(){ //メインの処理
     console.log("time:"+worldTime);
-    //客案内
-    directToSeat(visitors, seatConfiguration, cookingList);
+    //店員の動き
+    directToSeat(visitors, seatConfiguration, groupOrderList);
     account(payers);
     cleaning(seatConfiguration);
+    serve(groupOrderList, cookedMenus, seatConfiguration);
+
     for(const cookingMenu of cookingMenus){
         cookingStart(cookingMenu, cookingMenu.maxAmount, worldTime);
     }
-
 
     //自動処理部分
     //確率で来客
@@ -333,7 +353,7 @@ function main(){ //メインの処理
     timerViewUpdate(worldTime);
     dishViewUpdate(cookingMenus, cookedMenus);
 
-
+    console.log(groupOrderList);
     worldTime += 1;
 }
 setup();
