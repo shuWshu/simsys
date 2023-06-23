@@ -71,7 +71,7 @@ class Seat{ //席
         this.maxEatingTime = 0;
         this.startEatingTime = 0;
     }
-    cleaned(){
+    cleaned(){ //掃除
         this.num = 0;
         this.visitors = [];
         this.state = 0;
@@ -125,14 +125,14 @@ function takeOrders(customers, cookingList){
     cookingList.push(groupOrder); //グループ注文をリストに保存
 }
 
-//食事終了処理
+//食事終了時処理
 function eatingEnd(seatConfiguration, payers, time){
     for(const [index, seat] of seatConfiguration.entries()){ //各座席について index:インデックス seat:席そのもの
         if(seat.state == 2){ //食事中の場合
             if((time - seat.startEatingTime) == seat.maxEatingTime){//食事終了
                 //console.log("eat end:"+index);
-                payers.push(seat.visitors); //グループを格納
-                seat.goBack(); //席の更新
+                payers.push(seat.visitors); //会計待ちへグループを格納
+                seat.goBack(); //席を片付け前に更新
             }
         }
     }
@@ -140,7 +140,19 @@ function eatingEnd(seatConfiguration, payers, time){
 
 //会計処理
 function account(payers){
-    payers.shift(); //先頭の客を削除
+    payers.shift(); //リスト先頭の客を削除
+}
+
+//席の掃除
+//席リストを渡すとインデックスが若い席を掃除する
+function cleaning(seatConfiguration){
+    for(const [index, seat] of seatConfiguration.entries()){ //各座席について index:インデックス seat:席そのもの
+        if(seat.state == 3){ //席が片付け待ち
+            seat.cleaned(); //席掃除
+            return 1;
+        }
+    }
+    return -1;
 }
 
 // --------- draw function -------
@@ -234,6 +246,7 @@ function main(){ //メインの処理
     //客案内
     directToSeat(visitors, seatConfiguration, cookingList);
     account(payers);
+    cleaning(seatConfiguration);
 
     //自動処理部分
     //確率で来客
