@@ -1,6 +1,7 @@
 // --------- parameter -----------
 const VISIT_RATE = 0.4; //各コマでの来客率
 const CPS = 1; //1秒間に何コマ進むか
+const VISITROS_SHOW = 10; //順番待ちの描画数
 
 // --------- class ---------------
 
@@ -63,7 +64,6 @@ const seatConfiguration = []; //座席のリスト
 const cookingList = []; //調理中のグループ注文リスト
 
 let worldTime = 0; //シミュレータ内の時間 単位はコマ
-//TODO:時間経過での処理を作る
 
 // --------- function ------------
 //客来店
@@ -105,25 +105,46 @@ function takeOrders(customers, cookingList){
     cookingList.push(groupOrder); //グループ注文をリストに保存
 }
 
-//席の更新
-function PeopleViewUpdate(seatConfiguration){
+//客描画情報の更新
+function PeopleViewUpdate(visitors, seatConfiguration){
     for(const [index, seat] of seatConfiguration.entries()){ //各座席につき
         const desk = document.querySelector("#desk"+seat.maxNum+"_"+index);
-        console.log(desk);
+        // console.log(desk);
         for(let i = 0; i < seat.maxNum; ++i){
             const human = desk.querySelector(".human"+i);
             //console.log(human);
             let state = seat.state;
-            if(i >= seat.num){ state = 0 }; //座っている人数に合わせる
-            //カラーのリセット
-            human.classList.remove("color0");
-            human.classList.remove("color1");
-            human.classList.remove("color2");
-            human.classList.add("color"+state); //正しい色の追加
+            if(i >= seat.num){ state = 0; } //座っている人数に合わせる
+            colorReset(human, state); //カラーのリセット
         }
-        
-        
     }
+    for(let i = 0; i < VISITROS_SHOW; ++i){ //描画最大数まで処理
+        const customers = visitors[i];
+        let state = 0;
+        let num = 0;
+        if(customers){ //人が居るなら行う
+            num = customers.length;
+            state = 1;
+        }
+        const visitor = document.querySelector("#visitor").querySelector(".humanV"+i);
+        const viewText = visitor.querySelector(".num");
+        colorReset(visitor, state); //カラーのリセット
+        viewText.textContent = num;
+    }
+    // 3点リーダの表示
+    let state = 0;
+    const customers = visitors[VISITROS_SHOW];
+    if(customers){ state = 1; } //人が居るなら
+    const visitor = document.querySelector("#visitor").querySelector(".moreHuman");
+    colorReset(visitor, state); //カラーのリセット
+}
+
+function colorReset(element, state){
+    //カラーのリセット
+    element.classList.remove("color0");
+    element.classList.remove("color1");
+    element.classList.remove("color2");
+    element.classList.add("color"+state); //正しい色の追加
 }
 
 // --------- test code -----------
@@ -169,10 +190,10 @@ function main(){ //メインの処理
     if(Math.random() < VISIT_RATE){
         const num = Math.floor(Math.random() * 6) + 1;
         visitCustomerNumN(visitors, num);
-        console.log("visit!")
+        // console.log("visit!")
     }
     
-    PeopleViewUpdate(seatConfiguration);
+    PeopleViewUpdate(visitors, seatConfiguration);
     console.log(visitors);
 
 
@@ -180,4 +201,3 @@ function main(){ //メインの処理
 }
 setup();
 setInterval(main, 1000 / CPS); //繰り返し実行
-//PeopleViewUpdate(seatConfiguration);
