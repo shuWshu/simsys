@@ -157,6 +157,13 @@ body{
     color: inherit;
     background-color: transparent;
 }
+#timer{
+    position:absolute;
+    top:55px;
+    left:30px;
+    font-size: 32px;
+    color: white;
+}
 
 /* 色設定クラス */
 .color0{

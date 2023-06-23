@@ -139,6 +139,13 @@ function PeopleViewUpdate(visitors, seatConfiguration){
     colorReset(visitor, state); //カラーのリセット
 }
 
+function timerViewUpdate(time){
+    const timer = document.querySelector("#timer");
+    timer.textContent = ("00"+Math.floor((12+time/180)%24)).slice(-2)+":"+
+                        ("00"+Math.floor(time/3%60)).slice(-2)+":"+
+                        ("00"+(time%3)*20).slice(-2); //時間表記
+}
+
 function colorReset(element, state){
     //カラーのリセット
     element.classList.remove("color0");
@@ -148,9 +155,6 @@ function colorReset(element, state){
 }
 
 // --------- test code -----------
-
-
-
 function setup(){
     // console.log(directToSeat(visitors)) //客が居ない時の確認
     // 席の配置
@@ -168,16 +172,11 @@ function setup(){
     visitCustomerNumN(visitors, 4);
     visitCustomerNumN(visitors, 2);
     visitCustomerNumN(visitors, 5);
-    //console.log(visitors) //生成された客リスト
-    console.log(directToSeat(visitors, seatConfiguration, cookingList)) //案内先
-    console.log(directToSeat(visitors, seatConfiguration, cookingList))
-    console.log(directToSeat(visitors, seatConfiguration, cookingList))
-    //console.log(visitors); //案内後の客リスト
-    console.log(seatConfiguration); //席配置
-
-    console.log(cookingList); //注文リスト
 
     worldTime = 0; //シミュレータ内の時間 単位はコマ
+
+    PeopleViewUpdate(visitors, seatConfiguration);
+    timerViewUpdate(worldTime);
 }
 
 function main(){ //メインの処理
@@ -193,7 +192,8 @@ function main(){ //メインの処理
         // console.log("visit!")
     }
     
-    PeopleViewUpdate(visitors, seatConfiguration);
+    PeopleViewUpdate(visitors, seatConfiguration); //描画更新
+    timerViewUpdate(worldTime);
     console.log(visitors);
 
 
