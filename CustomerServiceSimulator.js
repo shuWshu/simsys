@@ -138,6 +138,11 @@ function eatingEnd(seatConfiguration, payers, time){
     }
 }
 
+//会計処理
+function account(payers){
+    payers.shift(); //先頭の客を削除
+}
+
 // --------- draw function -------
 //客描画情報の更新
 function PeopleViewUpdate(visitors, seatConfiguration, payers){
@@ -228,6 +233,7 @@ function main(){ //メインの処理
     console.log("time:"+worldTime);
     //客案内
     directToSeat(visitors, seatConfiguration, cookingList);
+    account(payers);
 
     //自動処理部分
     //確率で来客
