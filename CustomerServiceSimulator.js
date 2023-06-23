@@ -324,6 +324,12 @@ function dishViewUpdate(cookingMenus, cookedMenus){
     }
 }
 
+function totalViewUpdate(total){
+    const totalView = document.querySelector("#total");
+    totalView.querySelector(".number").textContent = "Total number: "+total[0];
+    totalView.querySelector(".sales").textContent = "Total sales: "+total[1];
+}
+
 function colorReset(element, state){
     //カラーのリセット
     element.classList.remove("color0");
@@ -379,9 +385,12 @@ function main(){ //メインの処理
     }
     cookingEnd(cookingMenus, cookedMenus, worldTime);
     eatingEnd(seatConfiguration, payers, worldTime);
-    PeopleViewUpdate(visitors, seatConfiguration, payers); //描画更新
+
+    //描画更新
+    PeopleViewUpdate(visitors, seatConfiguration, payers); 
     timerViewUpdate(worldTime);
     dishViewUpdate(cookingMenus, cookedMenus);
+    totalViewUpdate(total);
 
     worldTime += 1;
 }

@@ -225,7 +225,7 @@ body{
     color: white;
     background-color: transparent;
 }
-
+/* 行列関連 */
 .num{
     position:absolute;
     top:-25px;
@@ -238,12 +238,27 @@ body{
     color: inherit;
     background-color: transparent;
 }
+/* 表示情報 */
 #timer{
     position:absolute;
     top:55px;
     left:30px;
     font-size: 32px;
     color: white;
+}
+.number{
+    position:absolute;
+    top:0px;
+    left:0px;
+    color: white;
+    background-color: transparent;
+}
+.sales{
+    position:absolute;
+    top:30px;
+    left:0px;
+    color: white;
+    background-color: transparent;
 }
 
 /* 色設定クラス */
@@ -338,5 +353,10 @@ body{
 #cookedMenu1{
     position: relative;
     top: 420px;
+    left: 120px;
+}
+#total{
+    position: relative;
+    top: 600px;
     left: 120px;
 }
