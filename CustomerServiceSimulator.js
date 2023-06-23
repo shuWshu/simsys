@@ -3,6 +3,7 @@ const VISIT_RATE = 0.4; //各コマでの来客率
 const CPS = 3; //1秒間に何コマ進むか
 const VISITROS_SHOW = 10; //順番待ちの描画数
 const PAYERS_SHOW = 5;
+const TIME_LIMIT = 3 * 60 * 3;
 
 // --------- class ---------------
 //注文
@@ -133,7 +134,7 @@ function visitCustomerNumN(visitors, num){
         const eatingTime = Math.floor(Math.random() * 22) + 24; //24~45
         const customer = new Customer(order, eatingTime);
         group.push(customer);
-        console.log(order, eatingTime);
+        // console.log(order, eatingTime);
     }
     visitors.push(group);
 }
@@ -185,22 +186,22 @@ function cookingEnd(cookingMenus, cookedMenus, time){
 
 //配膳
 //先頭要素の1人分の配膳
-//TODO:無限配膳バグがある(再現失敗)
+//オーダーがない場合-1を返す
 function serve(groupOrderList, cookedMenus, seatConfiguration){
-    for(const [index, groupOrder] of groupOrderList.entries()){
-        if(groupOrder.menuA <= cookedMenus[0] && groupOrder.menuB <= cookedMenus[1]){
-            groupOrder.servedNum += 1;
-            if(groupOrder.servedNum == groupOrder.num){ //配膳し終わった
-                cookedMenus[0] -= groupOrder.menuA;
-                cookedMenus[1] -= groupOrder.menuB;
-                seatConfiguration[groupOrder.seatNo].eatStart(worldTime); //TODO:席配置時に食事スタート
-                groupOrderList.shift();
-                console.log("served!");
-                return 0
-            }
-            console.log("served to "+groupOrder.seatNo+" : "+groupOrder.servedNum);
-            return groupOrder.num - groupOrder.servedNum;
+    const groupOrder = groupOrderList[0];
+    if(!groupOrder){ return -1; }
+    if(groupOrder.menuA <= cookedMenus[0] && groupOrder.menuB <= cookedMenus[1]){
+        groupOrder.servedNum += 1;
+        if(groupOrder.servedNum == groupOrder.num){ //配膳し終わった
+            cookedMenus[0] -= groupOrder.menuA;
+            cookedMenus[1] -= groupOrder.menuB;
+            seatConfiguration[groupOrder.seatNo].eatStart(worldTime); //TODO:席配置時に食事スタート
+            groupOrderList.shift();
+            console.log("served!");
+            return 0
         }
+        console.log("served to "+groupOrder.seatNo+" : "+groupOrder.servedNum);
+        return groupOrder.num - groupOrder.servedNum;
     }
 }
 
@@ -396,8 +397,12 @@ function main(){ //メインの処理
     dishViewUpdate(cookingMenus, cookedMenus);
     totalViewUpdate(total);
 
+    if(worldTime == TIME_LIMIT){
+        console.log("end");
+        clearInterval(timerId);
+    }
     //TODO:制限時間の追加
     worldTime += 1;
 }
 setup();
-setInterval(main, 1000 / CPS); //繰り返し実行
+const timerId = setInterval(main, 1000 / CPS); //繰り返し実行
