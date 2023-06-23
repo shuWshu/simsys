@@ -187,20 +187,21 @@ body{
     width: 25px;
     height: 25px;
 }
+/* 鍋関連 */
 .pot{
     top:0px;
     left:0px;
     position:absolute;
     background: black; 
     border: solid white;
-    width: 35px;
+    width: 50px;
     height: 35px;
 }
 .dish{
     top:6px;
     left:6px;
     position:absolute;
-    width: 25px;
+    width: 40px;
     height: 25px;
 }
 .amount{
@@ -210,6 +211,21 @@ body{
     color: black;
     background-color: transparent;
 }
+.potNametag{
+    position:absolute;
+    top:-25px;
+    left:45px;
+    color: white;
+    background-color: transparent;
+}
+.potComment{
+    position:absolute;
+    top:35px;
+    left:-3px;
+    color: white;
+    background-color: transparent;
+}
+
 .num{
     position:absolute;
     top:-25px;
