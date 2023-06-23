@@ -1,3 +1,7 @@
+// --------- parameter -----------
+const VISIT_RATE = 0.4; //各コマでの来客率
+const CPS = 1; //1秒間に何コマ進むか
+
 // --------- class ---------------
 
 class Order{
@@ -43,21 +47,23 @@ class Seat{ //席
         this.num = 0; //今いる客の数
         this.visitors = []; //客の内訳
         this.state = 0; //客の状態 0:居ない, 1:配膳待, 2:食事中
-        this.orders = []; //グループの注文リスト
-        this.eatingTimes = []; //食事時間リスト
+        this.maxEatingTime = 0; //食事時間最大
     }
     sit(customers, num){// 客が座る時の処理
         this.num = num;
         this.state = 1; //席状態を変更
         for(const customer of customers){ //客情報の格納
-            this.orders.push(customer.order);
-            this.eatingTimes.push(customer.eatingTime);
+            this.visitors.push(customer);
+            this.maxEatingTime = Math.max(this.maxEatingTime, customer.eatingTime);
         }
     }
 }
 const seatConfiguration = []; //座席のリスト
 
 const cookingList = []; //調理中のグループ注文リスト
+
+let worldTime = 0; //シミュレータ内の時間 単位はコマ
+//TODO:時間経過での処理を作る
 
 // --------- function ------------
 //客来店
@@ -99,27 +105,51 @@ function takeOrders(customers, cookingList){
     cookingList.push(groupOrder); //グループ注文をリストに保存
 }
 
+
 // --------- test code -----------
 
-// console.log(directToSeat(visitors)) //客が居ない時の確認
 
-// 席の配置設定
-for(let i = 0; i < 4; ++i){
-    seatConfiguration.push(new Seat(4));
+
+function setup(){
+    // console.log(directToSeat(visitors)) //客が居ない時の確認
+    // 席の配置
+    for(let i = 0; i < 2; ++i){
+        seatConfiguration.push(new Seat(1));
+    }
+    for(let i = 0; i < 4; ++i){
+        seatConfiguration.push(new Seat(4));
+    }
+    for(let i = 0; i < 3; ++i){
+        seatConfiguration.push(new Seat(6));
+    }
+    // console.log(seatConfiguration); //席リスト
+
+    visitCustomerNumN(visitors, 4);
+    visitCustomerNumN(visitors, 2);
+    visitCustomerNumN(visitors, 5);
+    //console.log(visitors) //生成された客リスト
+    console.log(directToSeat(visitors, seatConfiguration, cookingList)) //案内先
+    console.log(directToSeat(visitors, seatConfiguration, cookingList))
+    console.log(directToSeat(visitors, seatConfiguration, cookingList))
+    //console.log(visitors); //案内後の客リスト
+    console.log(seatConfiguration); //席配置
+
+    console.log(cookingList); //注文リスト
+
+    worldTime = 0; //シミュレータ内の時間 単位はコマ
 }
-for(let i = 0; i < 3; ++i){
-    seatConfiguration.push(new Seat(6));
+
+function main(){ //メインの処理
+    console.log(worldTime);
+
+    //自動処理部分
+    if(Math.random() < VISIT_RATE){
+        const num = Math.floor(Math.random() * 6) + 1;
+        visitCustomerNumN(visitors, num);
+        console.log("visit!")
+    }
+    console.log(visitors);
+    worldTime += 1;
 }
-// console.log(seatConfiguration); //席リスト
-
-visitCustomerNumN(visitors, 4);
-visitCustomerNumN(visitors, 2);
-visitCustomerNumN(visitors, 5);
-//console.log(visitors) //生成された客リスト
-console.log(directToSeat(visitors, seatConfiguration, cookingList)) //案内先
-console.log(directToSeat(visitors, seatConfiguration, cookingList))
-console.log(directToSeat(visitors, seatConfiguration, cookingList))
-//console.log(visitors); //案内後の客リスト
-console.log(seatConfiguration); //席配置
-
-console.log(cookingList); //注文リスト
+setup();
+setInterval(main, 1000 / CPS); //繰り返し実行
