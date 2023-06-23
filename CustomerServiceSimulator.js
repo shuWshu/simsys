@@ -245,11 +245,34 @@ function PeopleViewUpdate(visitors, seatConfiguration, payers){
     }
 }
 
+//タイマーの表示
 function timerViewUpdate(time){
     const timer = document.querySelector("#timer");
     timer.textContent = ("00"+Math.floor((12+time/180)%24)).slice(-2)+":"+
                         ("00"+Math.floor(time/3%60)).slice(-2)+":"+
                         ("00"+(time%3)*20).slice(-2); //時間表記
+}
+
+//料理の表示
+function dishViewUpdate(cookingMenus, cookedMenus){
+    for(const [index, cookingMenu] of cookingMenus.entries()){
+        const potView = document.querySelector("#cookingMenu"+index);
+        let state = 0;
+        const amount = cookingMenu.amount;
+        if(amount > 0){ state = 2; }
+        const dishView = potView.querySelector(".dish");
+        colorReset(dishView, state);
+        potView.querySelector(".amount").textContent = amount;
+    }
+    for(const [index, cookedMenu] of cookedMenus.entries()){
+        const potView = document.querySelector("#cookedMenu"+index);
+        let state = 0;
+        const amount = cookedMenu;
+        if(amount > 0){ state = 2; }
+        const dishView = potView.querySelector(".dish");
+        colorReset(dishView, state);
+        potView.querySelector(".amount").textContent = amount;
+    }
 }
 
 function colorReset(element, state){
@@ -308,6 +331,7 @@ function main(){ //メインの処理
     eatingEnd(seatConfiguration, payers, worldTime);
     PeopleViewUpdate(visitors, seatConfiguration, payers); //描画更新
     timerViewUpdate(worldTime);
+    dishViewUpdate(cookingMenus, cookedMenus);
 
 
     worldTime += 1;

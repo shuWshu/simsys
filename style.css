@@ -187,6 +187,29 @@ body{
     width: 25px;
     height: 25px;
 }
+.pot{
+    top:0px;
+    left:0px;
+    position:absolute;
+    background: black; 
+    border: solid white;
+    width: 35px;
+    height: 35px;
+}
+.dish{
+    top:6px;
+    left:6px;
+    position:absolute;
+    width: 25px;
+    height: 25px;
+}
+.amount{
+    position:absolute;
+    top:6px;
+    left:13px;
+    color: black;
+    background-color: transparent;
+}
 .num{
     position:absolute;
     top:-25px;
@@ -225,9 +248,7 @@ body{
     color: cyan;
 }
 
-
-
-/* 各机の配置 */
+/* 各IDの配置 */
 #desk1_0{
     position: relative;
     top: 300px;
@@ -282,4 +303,24 @@ body{
     position: relative;
     top: 150px;
     left: 130px;
+}
+#cookingMenu0{
+    position: relative;
+    top: 300px;
+    left: 30px;
+}
+#cookedMenu0{
+    position: relative;
+    top: 300px;
+    left: 120px;
+}
+#cookingMenu1{
+    position: relative;
+    top: 420px;
+    left: 30px;
+}
+#cookedMenu1{
+    position: relative;
+    top: 420px;
+    left: 120px;
 }
