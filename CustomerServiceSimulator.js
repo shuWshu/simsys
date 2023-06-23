@@ -1,5 +1,5 @@
 // --------- parameter -----------
-const VISIT_RATE = 0; //各コマでの来客率
+const VISIT_RATE = 0.4; //各コマでの来客率
 const CPS = 3; //1秒間に何コマ進むか
 const VISITROS_SHOW = 10; //順番待ちの描画数
 const PAYERS_SHOW = 5;
@@ -185,6 +185,7 @@ function cookingEnd(cookingMenus, cookedMenus, time){
 
 //配膳
 //先頭要素の1人分の配膳
+//TODO:無限配膳バグがある(再現失敗)
 function serve(groupOrderList, cookedMenus, seatConfiguration){
     for(const [index, groupOrder] of groupOrderList.entries()){
         if(groupOrder.menuA <= cookedMenus[0] && groupOrder.menuB <= cookedMenus[1]){
@@ -366,12 +367,15 @@ function setup(){
 
 function main(){ //メインの処理
     console.log("time:"+worldTime);
+
+    //TODO:店員概念の追加
     //店員の動き
     directToSeat(visitors, seatConfiguration, groupOrderList);
     account(payers, total);
     cleaning(seatConfiguration);
     serve(groupOrderList, cookedMenus, seatConfiguration);
 
+    //TODO:料理量調整の追加
     for(const cookingMenu of cookingMenus){
         cookingStart(cookingMenu, cookingMenu.maxAmount, worldTime);
     }
@@ -392,6 +396,7 @@ function main(){ //メインの処理
     dishViewUpdate(cookingMenus, cookedMenus);
     totalViewUpdate(total);
 
+    //TODO:制限時間の追加
     worldTime += 1;
 }
 setup();
