@@ -105,6 +105,23 @@ function takeOrders(customers, cookingList){
     cookingList.push(groupOrder); //グループ注文をリストに保存
 }
 
+//席の更新
+function PeopleViewUpdate(seatConfiguration){
+    for(const [index, seat] of seatConfiguration.entries()){ //各座席につき
+        const element = document.querySelector("#desk"+seat.maxNum+"_"+index);
+        // console.log(element);
+        if(element.classList.contains('color0')){
+            element.classList.remove("color0");
+            element.classList.add("color"+seat.state);
+        }else if(element.classList.contains('color1')){
+            element.classList.remove("color1");
+            element.classList.add("color"+seat.state);
+        }else if(element.classList.contains('color2')){
+            element.classList.remove("color2");
+            element.classList.add("color"+seat.state);
+        }
+    }
+}
 
 // --------- test code -----------
 
@@ -151,7 +168,11 @@ function main(){ //メインの処理
         visitCustomerNumN(visitors, num);
         console.log("visit!")
     }
+    
+    PeopleViewUpdate(seatConfiguration);
     console.log(visitors);
+
+
     worldTime += 1;
 }
 setup();

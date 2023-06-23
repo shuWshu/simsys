@@ -102,12 +102,12 @@ body{
 /* 各机の配置 */
 #desk1_0{
     position: relative;
-    top: 100px;
+    top: 200px;
     left: 100px;
 }
 #desk1_1{
     position: relative;
-    top: 150px;
+    top: 250px;
     left: 100px;
 }
 #desk4_2{
@@ -118,17 +118,17 @@ body{
 #desk4_3{
     position: relative;
     top: 100px;
-    left: 300px;
+    left: 310px;
 }
 #desk4_4{
     position: relative;
     top: 100px;
-    left: 400px;
+    left: 420px;
 }
 #desk4_5{
     position: relative;
     top: 100px;
-    left: 500px;
+    left: 530px;
 }
 #desk6_6{
     position: relative;
