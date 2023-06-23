@@ -141,8 +141,11 @@ function setup(){
 
 function main(){ //メインの処理
     console.log(worldTime);
+    //客案内
+    console.log(directToSeat(visitors, seatConfiguration, cookingList));
 
     //自動処理部分
+    //確率で来客
     if(Math.random() < VISIT_RATE){
         const num = Math.floor(Math.random() * 6) + 1;
         visitCustomerNumN(visitors, num);
