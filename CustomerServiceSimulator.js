@@ -40,6 +40,7 @@ class Customer{ //客
 }
 //客グループリストの定義
 const visitors = []; //案内待ちのグループ
+const payers = []; //会計待ちのグループ
 
 //席の情報の定義
 class Seat{ //席
@@ -59,10 +60,20 @@ class Seat{ //席
             this.maxEatingTime = Math.max(this.maxEatingTime, customer.eatingTime);
         }
     }
-    eatStart(time){
+    eatStart(time){ //食事開始
         this.state = 2; //席状態を変更
         this.startEatingTime = time;
         //console.log("start:"+this.startEatingTime+", max:"+this.maxEatingTime)
+    }
+    goBack(){ //帰宅
+        this.state = 3; //席状態を変更
+        this.maxEatingTime = 0;
+        this.startEatingTime = 0;
+    }
+    cleaned(){
+        this.num = 0;
+        this.visitors = [];
+        this.state = 0;
     }
 }
 const seatConfiguration = []; //座席のリスト
@@ -94,7 +105,7 @@ function directToSeat(visitors, seatConfiguration, cookingList){
     const num = visitors[0].length; //先頭の客人数取得
     for(const [index, seat] of seatConfiguration.entries()){ //各座席について index:インデックス seat:席そのもの
         // 座れる場合
-        if(num <= seat.maxNum && seat.num == 0){ //最大人数以下かつ座っていない
+        if(num <= seat.maxNum && seat.state == 0){ //最大人数以下かつ座っていない
             seat.sit(visitors[0], num);
             takeOrders(visitors[0], cookingList);
             visitors.shift(); //先頭の客を削除
@@ -114,12 +125,13 @@ function takeOrders(customers, cookingList){
 }
 
 //食事終了処理
-function eatingEnd(seatConfiguration, time){
+function eatingEnd(seatConfiguration, payers, time){
     for(const [index, seat] of seatConfiguration.entries()){ //各座席について index:インデックス seat:席そのもの
         if(seat.state == 2){ //食事中の場合
             if((time - seat.startEatingTime) == seat.maxEatingTime){//食事終了
                 //console.log("eat end:"+index);
-                
+                payers.push(seat.visitors); //グループを格納
+                seat.goBack(); //席の更新
             }
         }
     }
@@ -128,6 +140,7 @@ function eatingEnd(seatConfiguration, time){
 // --------- draw function -------
 //客描画情報の更新
 function PeopleViewUpdate(visitors, seatConfiguration){
+    //席の表示
     for(const [index, seat] of seatConfiguration.entries()){ //各座席につき
         const desk = document.querySelector("#desk"+seat.maxNum+"_"+index);
         // console.log(desk);
@@ -139,6 +152,7 @@ function PeopleViewUpdate(visitors, seatConfiguration){
             colorReset(human, state); //カラーのリセット
         }
     }
+    //並んでる客の表示
     for(let i = 0; i < VISITROS_SHOW; ++i){ //描画最大数まで処理
         const customers = visitors[i];
         let state = 0;
@@ -172,6 +186,7 @@ function colorReset(element, state){
     element.classList.remove("color0");
     element.classList.remove("color1");
     element.classList.remove("color2");
+    element.classList.remove("color3");
     element.classList.add("color"+state); //正しい色の追加
 }
 
@@ -212,7 +227,7 @@ function main(){ //メインの処理
         visitCustomerNumN(visitors, num);
         // console.log("visit!")
     }
-    eatingEnd(seatConfiguration, worldTime);
+    eatingEnd(seatConfiguration, payers, worldTime);
     PeopleViewUpdate(visitors, seatConfiguration); //描画更新
     timerViewUpdate(worldTime);
 
