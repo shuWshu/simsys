@@ -81,6 +81,28 @@ const seatConfiguration = []; //座席のリスト
 
 const cookingList = []; //調理中のグループ注文リスト
 
+class CookingMenu{
+    constructor(maxAmount, cookingTime){
+        this.amount = 0;
+        this.startCookingTime = 0;
+        this.maxAmount = maxAmount;
+        this.cookingTime = cookingTime;
+    }
+    start(amount, time){ //調理開始 maxより多いなら-1を返す
+        if(amount > this.maxAmount){ return -1; }
+        this.amount = amount;
+        this.startCookingTime = time;
+    }
+    cooked(){ //調理完了
+        this.amount = 0;
+        this.startCookingTime = 0;
+    }
+}
+let cookingMenuA = new CookingMenu(60, 24); //調理中のメニューAの量
+let cookingMenuB = new CookingMenu(5, 15); //調理中のメニューBの量
+const cookingMenus = [cookingMenuA, cookingMenuB]; //調理中リスト
+const cookedMenus = [0, 0] //調理済リスト A, B
+
 let worldTime = 0; //シミュレータ内の時間 単位はコマ
 
 // --------- function ------------
@@ -125,11 +147,34 @@ function takeOrders(customers, cookingList){
     cookingList.push(groupOrder); //グループ注文をリストに保存
 }
 
+//調理開始
+//調理済みなら-1を返す
+function cookingStart(cookingMenu, amount, time){
+    if(cookingMenu.amount > 0){ 
+        //console.log("already cooking");
+        return -1;
+    }
+    cookingMenu.start(amount, time);
+}
+
+//調理終了時処理
+function cookingEnd(cookingMenus, cookedMenus, time){
+    for(const [index, cookingMenu] of cookingMenus.entries()){ //各調理中メニューについて
+        if((time - cookingMenu.startCookingTime) == cookingMenu.cookingTime){
+            cookedMenus[index] += cookingMenu.amount;
+            console.log(cookingMenu);
+            cookingMenu.cooked();
+            console.log("cooking end");
+            console.log(cookedMenus);
+        }
+    }
+}
+
 //食事終了時処理
 function eatingEnd(seatConfiguration, payers, time){
     for(const [index, seat] of seatConfiguration.entries()){ //各座席について index:インデックス seat:席そのもの
         if(seat.state == 2){ //食事中の場合
-            if((time - seat.startEatingTime) == seat.maxEatingTime){//食事終了
+            if((time - seat.startEatingTime) == seat.maxEatingTime){ //食事終了
                 //console.log("eat end:"+index);
                 payers.push(seat.visitors); //会計待ちへグループを格納
                 seat.goBack(); //席を片付け前に更新
@@ -247,6 +292,10 @@ function main(){ //メインの処理
     directToSeat(visitors, seatConfiguration, cookingList);
     account(payers);
     cleaning(seatConfiguration);
+    for(const cookingMenu of cookingMenus){
+        cookingStart(cookingMenu, cookingMenu.maxAmount, worldTime);
+    }
+
 
     //自動処理部分
     //確率で来客
@@ -255,6 +304,7 @@ function main(){ //メインの処理
         visitCustomerNumN(visitors, num);
         // console.log("visit!")
     }
+    cookingEnd(cookingMenus, cookedMenus, worldTime);
     eatingEnd(seatConfiguration, payers, worldTime);
     PeopleViewUpdate(visitors, seatConfiguration, payers); //描画更新
     timerViewUpdate(worldTime);
