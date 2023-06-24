@@ -129,6 +129,19 @@ class Clerk{
         this.doing = 0; //何をしているか 0:待機, 1:案内中, 2:配膳中, 3:レジ中, 4:掃除中
         this.going = -1; //向かってる席のインデックス 待機とレジは-1
         this.priority = priority; //仕事の優先順位
+        this.waitFrag = false; //次のターン待機する合図
+    }
+    set(doing, going){
+        this.doing = doing;
+        this.going = going;
+    }
+    willWait(){
+        this.waitFrag = true;
+    }
+    toWait(){
+        this.doing = 0;
+        this.going = -1;
+        this.waitFrag = false;
     }
 }
 const clerks = []; //店員リスト
@@ -166,16 +179,17 @@ function visitCustomerNumN(visitors, num){
     visitors.push(group);
 }
 
+//店員タスク:1
 //座席に案内しする
 //返値:成功なら1, 客が居ないなら-1, 席が空いていないなら-2
-function directToSeat(visitors, seatConfiguration, groupOrderList){
+function directToSeat(visitors, seatConfiguration, clerk){
     if(!visitors.length){ return -1; } //客がいない
     const num = visitors[0].length; //先頭の客人数取得
     for(const [index, seat] of seatConfiguration.entries()){ //各座席について index:インデックス seat:席そのもの
         // 座れる場合
         if(num <= seat.maxNum && seat.state == 0){ //最大人数以下かつ座っていない
             seat.sit(visitors[0], num);
-            //takeOrders(visitors[0], groupOrderList, index);
+            clerk.set(1, index);
             visitors.shift(); //先頭の客を削除
             return 1;
         }
@@ -183,11 +197,13 @@ function directToSeat(visitors, seatConfiguration, groupOrderList){
     return -2; //座れない
 }
 
+//店員タスク
 //注文を取る処理
-function takeOrders(customers, groupOrderList, seatNo){
+function takeOrders(customers, groupOrderList, clerk){
     const groupOrder = new GroupOrder(); //グループ内の注文合計
-    groupOrder.addGroup(customers, seatNo); //グループ注文の計算
+    groupOrder.addGroup(customers, clerk.going); //グループ注文の計算
     groupOrderList.push(groupOrder); //グループ注文をリストに保存
+    clerk.willWait();
 }
 
 //調理開始
@@ -224,10 +240,10 @@ function serve(groupOrderList, cookedMenus, seatConfiguration){
             cookedMenus[1] -= groupOrder.menuB;
             seatConfiguration[groupOrder.seatNo].eatStart(worldTime);
             groupOrderList.shift();
-            console.log("served!");
+            //console.log("served!");
             return 1
         }
-        console.log("served to "+groupOrder.seatNo+" : "+groupOrder.servedNum);
+        //console.log("served to "+groupOrder.seatNo+" : "+groupOrder.servedNum);
         return 1;
     }else{
         return -2;
@@ -255,7 +271,7 @@ function account(payers, total){
         total[0] += payer.num;
         total[1] += calculateMenuA(payer.num, payer.menuA);
         total[1] += calculateMenuB(payer.menuB);
-        console.log(total[0]+": "+total[1]);
+        //console.log(total[0]+": "+total[1]);
         payers.shift(); //リスト先頭の客を削除
         return 1;
     }else{
@@ -287,6 +303,15 @@ function cleaning(seatConfiguration){
 //席の掃除終了
 function cleaned(seatConfiguration, seatNo){
     seatConfiguration[seatNo].cleaned(); //掃除終了
+}
+
+//待機に変更
+function toWait(clerks){
+    for(const clerk of clerks){
+        if(clerk.waitFrag){
+            clerk.toWait();
+        }
+    }
 }
 
 // --------- draw function -------
@@ -423,9 +448,9 @@ function setup(){
     // console.log(seatConfiguration); //席リスト
 
     //店員召喚
-    clerks.push(new Clerk(3, 0, [2, 1, 0, 3]));
-    clerks.push(new Clerk(1, 1, [2, 1, 0, 3]));
-    clerks.push(new Clerk(2, 6, [2, 1, 0, 3]));
+    clerks.push(new Clerk([3, 2, 1, 4]));
+    clerks.push(new Clerk([3, 2, 1, 4]));
+    clerks.push(new Clerk([3, 2, 1, 4]));
 
     visitCustomerNumN(visitors, 4);
     visitCustomerNumN(visitors, 2);
@@ -442,6 +467,24 @@ function main(){ //メインの処理
 
     //TODO:店員概念の追加
     //店員の動き
+    for(const [index, clerk] of clerks.entries()){//各店員について
+        if(clerk.doing == 0){ //待機中なら
+            for(let i = 0; i < 4; ++i){ //作業の優先順位に従う
+                let resurt = 0; //結果の格納
+                if(clerk.priority[i] == 1){
+                    resurt = directToSeat(visitors, seatConfiguration, clerk);
+                }else if(clerk.priority[i] == 2){
+    
+                }else if(clerk.priority[i] == 3){
+    
+                }else if(clerk.priority[i] == 4){
+                    
+                }
+            }
+        }else if(clerk.doing == 1){
+            takeOrders(seatConfiguration[clerk.going].visitors, groupOrderList, clerk);
+        }
+    }
 
     directToSeat(visitors, seatConfiguration, groupOrderList);
     //takeOrders(customers, groupOrderList, seatNo);
@@ -460,7 +503,6 @@ function main(){ //メインの処理
     if(Math.random() < VISIT_RATE){
         const num = randamizer(VISIT_NUM) + 1;
         visitCustomerNumN(visitors, num);
-        console.log("visit! :"+num);
     }
     cookingEnd(cookingMenus, cookedMenus, worldTime);
     eatingEnd(seatConfiguration, payers, worldTime);
@@ -471,6 +513,7 @@ function main(){ //メインの処理
     dishViewUpdate(cookingMenus, cookedMenus);
     totalViewUpdate(total);
 
+    toWait(clerks);
     if(worldTime == TIME_LIMIT){
         console.log("end");
         clearInterval(timerId);
