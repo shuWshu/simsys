@@ -1,10 +1,11 @@
 // --------- parameter -----------
 const VISIT_RATE = 0.1; //各コマでの来客率
-const VISIT_NUM = [4, 4, 2, 2, 1, 1];
-const CPS = 1; //1秒間に何コマ進むか
+const VISIT_NUM = [3, 4, 3, 2, 1, 1];
+const CPS = 30; //1秒間に何コマ進むか
 const VISITROS_SHOW = 10; //順番待ちの描画数
-const PAYERS_SHOW = 5;
-const TIME_LIMIT = 3 * 60 * 3;
+const PAYERS_SHOW = 5; //会計待ちの描画数
+const TIME_LIMIT = 3 * 60 * 3; //タイムリミット n時間なら3*60*n
+const VISITROS_START = 3; //開始時の客数
 
 // --------- class ---------------
 //注文
@@ -21,7 +22,7 @@ class GroupOrder{
         this.menuB = 0; //餃子の数
         this.num = 0; //人数
         this.servedNum = 0; //配膳済人数
-        this.seatNo = 0;
+        this.seatNo = 0; //席番号
     }
     add(customer){ //1人分のデータ追加
         this.menuA += customer.order.menuA;
@@ -98,14 +99,13 @@ const seatConfiguration = []; //座席のリスト
 
 class CookingMenu{
     constructor(maxAmount, cookingTime){
-        this.amount = 0;
-        this.startCookingTime = 0;
-        this.maxAmount = maxAmount;
-        this.cookingTime = cookingTime;
+        this.amount = 0; //調理中の量
+        this.startCookingTime = 0; //開始時刻
+        this.maxAmount = maxAmount; //最大量
+        this.cookingTime = cookingTime; //所要時間
     }
-    start(amount, time){ //調理開始 maxより多いなら-1を返す
-        if(amount > this.maxAmount){ return -1; }
-        this.amount = amount;
+    start(amount, time){ //調理開始 maxより多いならmaxを入れる
+        this.amount = Math.min(amount, this.maxAmount);
         this.startCookingTime = time;
     }
     cooked(){ //調理完了
@@ -213,12 +213,10 @@ function takeOrders(customers, tentativeOrderList, clerk){
 }
 
 //調理開始
-//調理済みなら-1を返す
+//調理失敗で-1を返す
 function cookingStart(cookingMenu, amount, time){
-    if(cookingMenu.amount > 0){ 
-        //console.log("already cooking");
-        return -1;
-    }
+    if(cookingMenu.amount > 0){ return -1; }
+    if(amount <= 0){ return -1; }
     cookingMenu.start(amount, time);
 }
 
@@ -469,9 +467,11 @@ function setup(){
     clerks.push(new Clerk([4, 2, 1, 3]));
     clerks.push(new Clerk([4, 2, 1, 3]));
 
-    visitCustomerNumN(visitors, 4);
-    visitCustomerNumN(visitors, 2);
-    visitCustomerNumN(visitors, 5);
+    for(let i = 0; i < VISITROS_START; ++i){
+        const num = randamizer(VISIT_NUM) + 1;
+        visitCustomerNumN(visitors, num);
+    }
+
 
     worldTime = 0; //シミュレータ内の時間 単位はコマ
 
@@ -481,7 +481,6 @@ function setup(){
 
 function main(){ //メインの処理
     console.log("time:"+worldTime);
-    //TODO:注文を取った時にメニューができていると次のエージェントがすぐ配膳するバグあり
     //店員の動き
     for(const [index, clerk] of clerks.entries()){//各店員について
         if(clerk.doing == 0){ //待機中なら
@@ -514,9 +513,18 @@ function main(){ //メインの処理
         groupOrderList.push(tentativeOrder);
     }
     tentativeOrderList = [];
-    //TODO:料理量調整の追加
-    for(const cookingMenu of cookingMenus){
-        cookingStart(cookingMenu, cookingMenu.maxAmount, worldTime);
+    for(const [index, cookingMenu] of cookingMenus.entries()){
+        if(cookingMenu.amount == 0 && groupOrderList.length){ //非調理中かつオーダーがある
+            let orderAmount = 0
+            if(index == 0){ 
+                for(const groupOrder of groupOrderList){ orderAmount += groupOrder.menuA; }
+            }else if(index == 1){
+                for(const groupOrder of groupOrderList){ orderAmount += groupOrder.menuB; }
+            }
+            const cookedAmount = cookedMenus[index];
+            const amount = orderAmount - cookedAmount;
+            cookingStart(cookingMenu, amount, worldTime);
+        }
     }
 
     //自動処理A
