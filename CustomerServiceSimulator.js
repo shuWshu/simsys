@@ -36,6 +36,7 @@ class GroupOrder{
     }
 }
 const groupOrderList = []; //調理中のグループ注文リスト 合計のオーダーが入ってる
+let tentativeOrderList = []; //仮オーダーリスト
 
 //客の定義
 class Customer{ //客
@@ -53,7 +54,7 @@ class Seat{ //席
         this.maxNum = maxNum; //客の収容人数
         this.num = 0; //今いる客の数
         this.visitors = []; //客の内訳
-        this.state = 0; //席の状態 0:居ない, 1:配膳待, 2:食事中, 3:片付け待ち, 3.5:片付け中, 4:片付け後
+        this.state = 0; //席の状態 0:居ない, 1:配膳待, 2:食事中, 3:片付け待ち, 3.5:片付け中, 3.8:片付け後
         this.maxEatingTime = 0; //食事時間最大
         this.startEatingTime = 0; //食事開始時間
         this.menuA = 0; //メニューAの量
@@ -85,11 +86,11 @@ class Seat{ //席
         this.state = 3.5;
     }
     cleaned(){ //掃除
-        this.num = 0;
         this.visitors = [];
-        this.state = 4;
+        this.state = 3.8;
     }
     resetState(){
+        this.num = 0;
         this.state = 0;
     }
 }
@@ -203,10 +204,11 @@ function directToSeat(visitors, seatConfiguration, clerk){
 
 //店員タスク
 //注文を取る処理
-function takeOrders(customers, groupOrderList, clerk){
+//仮オーダーリストに保存
+function takeOrders(customers, tentativeOrderList, clerk){
     const groupOrder = new GroupOrder(); //グループ内の注文合計
     groupOrder.addGroup(customers, clerk.going); //グループ注文の計算
-    groupOrderList.push(groupOrder); //グループ注文をリストに保存
+    tentativeOrderList.push(groupOrder); //グループ注文をリストに保存
     clerk.willWait();
 }
 
@@ -499,7 +501,7 @@ function main(){ //メインの処理
                 if(i == 3){ console.log("clerk"+index+" do: nan"); }
             }
         }else if(clerk.doing == 1){
-            takeOrders(seatConfiguration[clerk.going].visitors, groupOrderList, clerk);
+            takeOrders(seatConfiguration[clerk.going].visitors, tentativeOrderList, clerk);
             console.log("clerk"+index+" do: 1");
         }else if(clerk.doing == 3){
             cleaned(seatConfiguration, clerk);
@@ -507,22 +509,22 @@ function main(){ //メインの処理
         }
     }
 
+    //仮オーダーを移す
+    for(const tentativeOrder of tentativeOrderList){
+        groupOrderList.push(tentativeOrder);
+    }
+    tentativeOrderList = [];
     //TODO:料理量調整の追加
     for(const cookingMenu of cookingMenus){
         cookingStart(cookingMenu, cookingMenu.maxAmount, worldTime);
     }
 
-    //自動処理部分
+    //自動処理A
     //確率で来客
     if(Math.random() < VISIT_RATE){
         const num = randamizer(VISIT_NUM) + 1;
         visitCustomerNumN(visitors, num);
-    }
-    cookingEnd(cookingMenus, cookedMenus, worldTime);
-    eatingEnd(seatConfiguration, payers, worldTime);
-    for(const seat of seatConfiguration){ //掃除完了状態の更新
-        if(seat.state == 4){ seat.resetState(); }
-    }
+    } 
 
     //描画更新
     PeopleViewUpdate(visitors, seatConfiguration, payers, clerks); 
@@ -530,6 +532,12 @@ function main(){ //メインの処理
     dishViewUpdate(cookingMenus, cookedMenus);
     totalViewUpdate(total);
 
+    //自動処理B
+    for(const seat of seatConfiguration){ //掃除完了状態の更新
+        if(seat.state == 3.8){ seat.resetState(); }
+    }
+    cookingEnd(cookingMenus, cookedMenus, worldTime);
+    eatingEnd(seatConfiguration, payers, worldTime);
     if(accounted){// 会計した場合
         payers.shift(); //会計者を減らす
         accounted = false; //会計カウントリセット
