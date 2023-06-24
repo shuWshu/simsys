@@ -126,12 +126,20 @@ body{
     border-radius: 50%;
     background-color: inherit;
 }
-.triangle {
+.square {
     position:absolute;
     top:15px;
     left:5px;
     width: 10px;
     height: 15px;
+    background-color: inherit;
+}
+.squareHead{
+    position:absolute;
+    top:0px;
+    left:0px;
+    width: 20px;
+    height: 20px;
     background-color: inherit;
 }
 .desk1{
@@ -359,4 +367,81 @@ body{
     position: relative;
     top: 600px;
     left: 120px;
+}
+
+/* 店員の位置 */
+#clerks{
+    position: absolute;
+    top: 0px;
+    left: 0px;
+}
+#clerk0{
+    position: relative;
+    top: 0px;
+    left: 0px;
+}
+#clerk1{
+    position: relative;
+    top: 0px;
+    left: 25px;
+}
+#clerk2{
+    position: relative;
+    top: 0px;
+    left: 50px;
+}
+.wait{
+    position: relative;
+    top: 530px;
+    left: 130px;
+}
+.go0{
+    position: relative;
+    top: 320px;
+    left: 250px;
+}
+.go1{
+    position: relative;
+    top: 370px;
+    left: 250px;
+}
+.go2{
+    position: relative;
+    top: 250px;
+    left: 305px;
+}
+.go3{
+    position: relative;
+    top: 250px;
+    left: 415px;
+}
+.go4{
+    position: relative;
+    top: 250px;
+    left: 525px;
+}
+.go5{
+    position: relative;
+    top: 250px;
+    left: 635px;
+}
+.go6{
+    position: relative;
+    top: 420px;
+    left: 325px;
+}
+.go7{
+    position: relative;
+    top: 420px;
+    left: 475px;
+}
+.go8{
+    position: relative;
+    top: 420px;
+    left: 625px;
+}
+.goRegister{
+    position: relative;
+    top: 120px;
+    left: 80px;
 }

@@ -123,6 +123,16 @@ class Payer{
 }
 const payers = []; //会計待ちのグループ
 
+//店員
+class Clerk{
+    constructor(priority){
+        this.doing = 0; //何をしているか 0:休憩, 1:案内中, 掃除中
+        this.going = -1; //向かってる席のインデックス -1でwait, 9でレジ
+        this.priority = priority; //仕事の優先順位
+    }
+}
+const clerks = []; //店員リスト
+
 const total = [0, 0]; //合計の 客数, 売上
 
 let worldTime = 0; //シミュレータ内の時間 単位はコマ
@@ -165,7 +175,7 @@ function directToSeat(visitors, seatConfiguration, groupOrderList){
         // 座れる場合
         if(num <= seat.maxNum && seat.state == 0){ //最大人数以下かつ座っていない
             seat.sit(visitors[0], num);
-            takeOrders(visitors[0], groupOrderList, index);
+            //takeOrders(visitors[0], groupOrderList, index);
             visitors.shift(); //先頭の客を削除
             return 1;
         }
@@ -206,13 +216,13 @@ function cookingEnd(cookingMenus, cookedMenus, time){
 //成功で1, オーダーがない場合-1, 量が足りないなら-2を返す
 function serve(groupOrderList, cookedMenus, seatConfiguration){
     const groupOrder = groupOrderList[0];
-    if(!groupOrder){ return -1; }
+    if(!groupOrder){ return -1; } // オーダー無し
     if(groupOrder.menuA <= cookedMenus[0] && groupOrder.menuB <= cookedMenus[1]){
         groupOrder.servedNum += 1;
         if(groupOrder.servedNum == groupOrder.num){ //配膳し終わった
             cookedMenus[0] -= groupOrder.menuA;
             cookedMenus[1] -= groupOrder.menuB;
-            seatConfiguration[groupOrder.seatNo].eatStart(worldTime); //TODO:席配置時に食事スタート
+            seatConfiguration[groupOrder.seatNo].eatStart(worldTime);
             groupOrderList.shift();
             console.log("served!");
             return 1
@@ -400,8 +410,10 @@ function main(){ //メインの処理
     //TODO:店員概念の追加
     //店員の動き
     directToSeat(visitors, seatConfiguration, groupOrderList);
+    //takeOrders(customers, groupOrderList, seatNo);
     account(payers, total);
     cleaning(seatConfiguration);
+    //cleaned(seatConfiguration, seatNo);
     serve(groupOrderList, cookedMenus, seatConfiguration);
 
     //TODO:料理量調整の追加
@@ -429,7 +441,6 @@ function main(){ //メインの処理
         console.log("end");
         clearInterval(timerId);
     }
-    //TODO:制限時間の追加
     worldTime += 1;
 }
 setup();
