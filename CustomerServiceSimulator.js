@@ -53,7 +53,7 @@ class Seat{ //席
         this.maxNum = maxNum; //客の収容人数
         this.num = 0; //今いる客の数
         this.visitors = []; //客の内訳
-        this.state = 0; //席の状態 0:居ない, 1:配膳待, 2:食事中, 3:片付け待ち, 3.5:片付け中
+        this.state = 0; //席の状態 0:居ない, 1:配膳待, 2:食事中, 3:片付け待ち, 3.5:片付け中, 4:片付け後
         this.maxEatingTime = 0; //食事時間最大
         this.startEatingTime = 0; //食事開始時間
         this.menuA = 0; //メニューAの量
@@ -87,6 +87,9 @@ class Seat{ //席
     cleaned(){ //掃除
         this.num = 0;
         this.visitors = [];
+        this.state = 4;
+    }
+    resetState(){
         this.state = 0;
     }
 }
@@ -485,7 +488,7 @@ function main(){ //メインの処理
                 }else if(clerk.priority[i] == 3){
                     resurt = cleaning(seatConfiguration, clerk);
                 }else if(clerk.priority[i] == 4){
-                    
+                    resurt = account(payers, total);
                 }
                 if(resurt > 0){ console.log("clerk"+index+" do: "+resurt); break; } //仕事を行ったら抜ける
                 if(i == 3){ console.log("clerk"+index+" do: nan"); }
@@ -498,9 +501,6 @@ function main(){ //メインの処理
             console.log("clerk"+index+" do: 3");
         }
     }
-
-    account(payers, total);
-    //cleaned(seatConfiguration, seatNo);
 
     //TODO:料理量調整の追加
     for(const cookingMenu of cookingMenus){
@@ -515,6 +515,9 @@ function main(){ //メインの処理
     }
     cookingEnd(cookingMenus, cookedMenus, worldTime);
     eatingEnd(seatConfiguration, payers, worldTime);
+    for(const seat of seatConfiguration){
+        if(seat.state == 4){ seat.resetState(); }
+    }
 
     //描画更新
     PeopleViewUpdate(visitors, seatConfiguration, payers, clerks); 
