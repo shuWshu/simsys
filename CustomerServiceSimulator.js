@@ -150,6 +150,7 @@ class Clerk{
 const clerks = []; //店員リスト
 
 const total = [0, 0]; //合計の 客数, 売上
+let accounted = false; //会計はターン1
 
 let worldTime = 0; //シミュレータ内の時間 単位はコマ
 
@@ -269,17 +270,21 @@ function eatingEnd(seatConfiguration, payers, time){
     }
 }
 
+//店員タスク:4
 //会計処理
-//処理ができたら1, できなかったら-1を返す
-function account(payers, total){
-    if(payers.length){ //客がいる
+//1コマにつき1回しかできない
+//処理ができたら4, できなかったら-1を返す
+function account(payers, total, accounted, clerk){
+    if(payers.length && accounted == false){ //客がいるかつ未会計
         const payer = payers[0]
         total[0] += payer.num;
         total[1] += calculateMenuA(payer.num, payer.menuA);
         total[1] += calculateMenuB(payer.menuB);
         //console.log(total[0]+": "+total[1]);
-        payers.shift(); //リスト先頭の客を削除
-        return 1;
+        //payers.shift(); //リスト先頭の客を削除 自動更新に移行
+        clerk.setDoing(4, -1);
+        clerk.willWait();
+        return 4;
     }else{
         return -1;
     }
@@ -474,7 +479,6 @@ function setup(){
 
 function main(){ //メインの処理
     console.log("time:"+worldTime);
-    //TODO:店員概念の追加
     //TODO:注文を取った時にメニューができていると次のエージェントがすぐ配膳するバグあり
     //店員の動き
     for(const [index, clerk] of clerks.entries()){//各店員について
@@ -488,8 +492,9 @@ function main(){ //メインの処理
                 }else if(clerk.priority[i] == 3){
                     resurt = cleaning(seatConfiguration, clerk);
                 }else if(clerk.priority[i] == 4){
-                    resurt = account(payers, total);
+                    resurt = account(payers, total, accounted, clerk);
                 }
+                if(resurt == 4){ accounted = true };
                 if(resurt > 0){ console.log("clerk"+index+" do: "+resurt); break; } //仕事を行ったら抜ける
                 if(i == 3){ console.log("clerk"+index+" do: nan"); }
             }
@@ -515,7 +520,7 @@ function main(){ //メインの処理
     }
     cookingEnd(cookingMenus, cookedMenus, worldTime);
     eatingEnd(seatConfiguration, payers, worldTime);
-    for(const seat of seatConfiguration){
+    for(const seat of seatConfiguration){ //掃除完了状態の更新
         if(seat.state == 4){ seat.resetState(); }
     }
 
@@ -525,12 +530,18 @@ function main(){ //メインの処理
     dishViewUpdate(cookingMenus, cookedMenus);
     totalViewUpdate(total);
 
+    if(accounted){// 会計した場合
+        payers.shift(); //会計者を減らす
+        accounted = false; //会計カウントリセット
+    }
+
+    //終了判定
     toWait(clerks);
     if(worldTime == TIME_LIMIT){
         console.log("end");
         clearInterval(timerId);
     }
-    worldTime += 1;
+    worldTime += 1; //時間更新
 }
 setup();
 const timerId = setInterval(main, 1000 / CPS); //繰り返し実行
