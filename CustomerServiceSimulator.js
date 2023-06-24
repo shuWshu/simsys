@@ -126,8 +126,8 @@ const payers = []; //会計待ちのグループ
 //店員
 class Clerk{
     constructor(priority){
-        this.doing = 0; //何をしているか 0:休憩, 1:案内中, 掃除中
-        this.going = -1; //向かってる席のインデックス -1でwait, 9でレジ
+        this.doing = 0; //何をしているか 0:待機, 1:案内中, 2:配膳中, 3:レジ中, 4:掃除中
+        this.going = -1; //向かってる席のインデックス 待機とレジは-1
         this.priority = priority; //仕事の優先順位
     }
 }
@@ -291,7 +291,7 @@ function cleaned(seatConfiguration, seatNo){
 
 // --------- draw function -------
 //客描画情報の更新
-function PeopleViewUpdate(visitors, seatConfiguration, payers){
+function PeopleViewUpdate(visitors, seatConfiguration, payers, clerks){
     //席の表示
     for(const [index, seat] of seatConfiguration.entries()){ //各座席につき
         const desk = document.querySelector("#desk"+seat.maxNum+"_"+index);
@@ -331,6 +331,34 @@ function PeopleViewUpdate(visitors, seatConfiguration, payers){
         if(payer){ state = 1; }//人が居るなら行う
         const payerView = document.querySelector("#payer").querySelector(".humanP"+i);
         colorReset(payerView, state); //カラーのリセット
+    }
+    //店員の表示
+    for(const [index, clerk] of clerks.entries()){
+        const doing = clerk.doing;
+        const clerkView = document.querySelector("#clerk"+index);
+        if(doing == 0){ //休憩中
+            colorReset(clerkView.querySelector(".wait"), 1);
+        }else{
+            colorReset(clerkView.querySelector(".wait"), 0);
+        }
+        let seatNo = -1;
+        if(doing == 1 || //仕事中
+           doing == 2 ||
+           doing == 4){
+            seatNo = clerk.going;
+        }
+        for(let i = 0; i < seatConfiguration.length; ++i){
+            if(i == seatNo){ //向かっている席番のみ
+                colorReset(clerkView.querySelector(".go"+i), 1);
+            }else{
+                colorReset(clerkView.querySelector(".go"+i), 0);
+            }
+        }
+        if(doing == 3){
+            colorReset(clerkView.querySelector(".goRegister"), 1);
+        }else{
+            colorReset(clerkView.querySelector(".goRegister"), 0);
+        }
     }
 }
 
@@ -394,13 +422,18 @@ function setup(){
     }
     // console.log(seatConfiguration); //席リスト
 
+    //店員召喚
+    clerks.push(new Clerk(3, 0, [2, 1, 0, 3]));
+    clerks.push(new Clerk(1, 1, [2, 1, 0, 3]));
+    clerks.push(new Clerk(2, 6, [2, 1, 0, 3]));
+
     visitCustomerNumN(visitors, 4);
     visitCustomerNumN(visitors, 2);
     visitCustomerNumN(visitors, 5);
 
     worldTime = 0; //シミュレータ内の時間 単位はコマ
 
-    PeopleViewUpdate(visitors, seatConfiguration, payers);
+    PeopleViewUpdate(visitors, seatConfiguration, payers, clerks);
     timerViewUpdate(worldTime);
 }
 
@@ -409,6 +442,7 @@ function main(){ //メインの処理
 
     //TODO:店員概念の追加
     //店員の動き
+
     directToSeat(visitors, seatConfiguration, groupOrderList);
     //takeOrders(customers, groupOrderList, seatNo);
     account(payers, total);
@@ -432,7 +466,7 @@ function main(){ //メインの処理
     eatingEnd(seatConfiguration, payers, worldTime);
 
     //描画更新
-    PeopleViewUpdate(visitors, seatConfiguration, payers); 
+    PeopleViewUpdate(visitors, seatConfiguration, payers, clerks); 
     timerViewUpdate(worldTime);
     dishViewUpdate(cookingMenus, cookedMenus);
     totalViewUpdate(total);
