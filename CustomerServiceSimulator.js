@@ -1,5 +1,6 @@
 // --------- parameter -----------
-const VISIT_RATE = 0.4; //各コマでの来客率
+const VISIT_RATE = 0.1; //各コマでの来客率
+const VISIT_NUM = [4, 4, 2, 2, 1, 1];
 const CPS = 3; //1秒間に何コマ進むか
 const VISITROS_SHOW = 10; //順番待ちの描画数
 const PAYERS_SHOW = 5;
@@ -52,7 +53,7 @@ class Seat{ //席
         this.maxNum = maxNum; //客の収容人数
         this.num = 0; //今いる客の数
         this.visitors = []; //客の内訳
-        this.state = 0; //席の状態 0:居ない, 1:配膳待, 2:食事中, 3:片付け待ち
+        this.state = 0; //席の状態 0:居ない, 1:配膳待, 2:食事中, 3:片付け待ち, 3.5:片付け中
         this.maxEatingTime = 0; //食事時間最大
         this.startEatingTime = 0; //食事開始時間
         this.menuA = 0; //メニューAの量
@@ -79,6 +80,9 @@ class Seat{ //席
         this.startEatingTime = 0;
         this.menuA = 0;
         this.menuB;
+    }
+    cleaning(){ //掃除
+        this.state = 3.5;
     }
     cleaned(){ //掃除
         this.num = 0;
@@ -124,6 +128,19 @@ const total = [0, 0]; //合計の 客数, 売上
 let worldTime = 0; //シミュレータ内の時間 単位はコマ
 
 // --------- function ------------
+//0~n-1の間で偏ったダイス
+//引数: [0の比率, 1の比率, 2の比率, ...]
+function randamizer(num){
+    const total = num.reduce(function(a, b){ return a + b; }) //合計
+    const r = Math.random();
+    let a = 0;
+    for(let i = 0; i < num.length - 1; ++i){
+        a += num[i] / total;
+        if(r<a) { return i; }
+    }  
+    return num.length - 1;
+}
+
 //客来店
 //客グループデータを作りvisitorsに追加
 function visitCustomerNumN(visitors, num){
@@ -139,8 +156,8 @@ function visitCustomerNumN(visitors, num){
     visitors.push(group);
 }
 
-//座席に案内し，注文処理を呼び出す
-//返値:成功なら案内席のインデックス, 客が居ないなら-1, 席が空いていないなら-2
+//座席に案内しする
+//返値:成功なら1, 客が居ないなら-1, 席が空いていないなら-2
 function directToSeat(visitors, seatConfiguration, groupOrderList){
     if(!visitors.length){ return -1; } //客がいない
     const num = visitors[0].length; //先頭の客人数取得
@@ -150,7 +167,7 @@ function directToSeat(visitors, seatConfiguration, groupOrderList){
             seat.sit(visitors[0], num);
             takeOrders(visitors[0], groupOrderList, index);
             visitors.shift(); //先頭の客を削除
-            return index;
+            return 1;
         }
     }
     return -2; //座れない
@@ -186,7 +203,7 @@ function cookingEnd(cookingMenus, cookedMenus, time){
 
 //配膳
 //先頭要素の1人分の配膳
-//オーダーがない場合-1を返す
+//成功で1, オーダーがない場合-1, 量が足りないなら-2を返す
 function serve(groupOrderList, cookedMenus, seatConfiguration){
     const groupOrder = groupOrderList[0];
     if(!groupOrder){ return -1; }
@@ -198,10 +215,12 @@ function serve(groupOrderList, cookedMenus, seatConfiguration){
             seatConfiguration[groupOrder.seatNo].eatStart(worldTime); //TODO:席配置時に食事スタート
             groupOrderList.shift();
             console.log("served!");
-            return 0
+            return 1
         }
         console.log("served to "+groupOrder.seatNo+" : "+groupOrder.servedNum);
-        return groupOrder.num - groupOrder.servedNum;
+        return 1;
+    }else{
+        return -2;
     }
 }
 
@@ -219,14 +238,18 @@ function eatingEnd(seatConfiguration, payers, time){
 }
 
 //会計処理
+//処理ができたら1, できなかったら-1を返す
 function account(payers, total){
-    if(payers.length){
+    if(payers.length){ //客がいる
         const payer = payers[0]
         total[0] += payer.num;
         total[1] += calculateMenuA(payer.num, payer.menuA);
         total[1] += calculateMenuB(payer.menuB);
         console.log(total[0]+": "+total[1]);
         payers.shift(); //リスト先頭の客を削除
+        return 1;
+    }else{
+        return -1;
     }
 }
 
@@ -239,16 +262,21 @@ function calculateMenuB(menuB){
     return menuB * 400;
 }
 
-//席の掃除
+//席の掃除開始
 //インデックスが若い席のみ掃除する
 function cleaning(seatConfiguration){
     for(const [index, seat] of seatConfiguration.entries()){ //各座席について index:インデックス seat:席そのもの
         if(seat.state == 3){ //席が片付け待ち
-            seat.cleaned(); //席掃除
+            seat.cleaning(); //席掃除
             return 1;
         }
     }
     return -1;
+}
+
+//席の掃除終了
+function cleaned(seatConfiguration, seatNo){
+    seatConfiguration[seatNo].cleaned(); //掃除終了
 }
 
 // --------- draw function -------
@@ -338,7 +366,7 @@ function colorReset(element, state){
     element.classList.remove("color1");
     element.classList.remove("color2");
     element.classList.remove("color3");
-    element.classList.add("color"+state); //正しい色の追加
+    element.classList.add("color"+Math.floor(state)); //正しい色の追加
 }
 
 // --------- test code -----------
@@ -384,9 +412,9 @@ function main(){ //メインの処理
     //自動処理部分
     //確率で来客
     if(Math.random() < VISIT_RATE){
-        const num = Math.floor(Math.random() * 6) + 1;
+        const num = randamizer(VISIT_NUM) + 1;
         visitCustomerNumN(visitors, num);
-        // console.log("visit!")
+        console.log("visit! :"+num);
     }
     cookingEnd(cookingMenus, cookedMenus, worldTime);
     eatingEnd(seatConfiguration, payers, worldTime);
