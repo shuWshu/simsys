@@ -131,7 +131,7 @@ class Clerk{
         this.priority = priority; //仕事の優先順位
         this.waitFrag = false; //次のターン待機する合図
     }
-    set(doing, going){
+    setDoing(doing, going){
         this.doing = doing;
         this.going = going;
     }
@@ -189,7 +189,7 @@ function directToSeat(visitors, seatConfiguration, clerk){
         // 座れる場合
         if(num <= seat.maxNum && seat.state == 0){ //最大人数以下かつ座っていない
             seat.sit(visitors[0], num);
-            clerk.set(1, index);
+            clerk.setDoing(1, index);
             visitors.shift(); //先頭の客を削除
             return 1;
         }
@@ -227,24 +227,27 @@ function cookingEnd(cookingMenus, cookedMenus, time){
     }
 }
 
+//店員タスク:2
 //配膳
 //先頭要素の1人分の配膳
-//成功で1, オーダーがない場合-1, 量が足りないなら-2を返す
-function serve(groupOrderList, cookedMenus, seatConfiguration){
+//成功で2, オーダーがない場合-1, 量が足りないなら-2を返す
+function serve(groupOrderList, cookedMenus, seatConfiguration, clerk){
     const groupOrder = groupOrderList[0];
     if(!groupOrder){ return -1; } // オーダー無し
-    if(groupOrder.menuA <= cookedMenus[0] && groupOrder.menuB <= cookedMenus[1]){
+    if(groupOrder.menuA <= cookedMenus[0] && groupOrder.menuB <= cookedMenus[1]){//配膳可能
+        clerk.setDoing(2, groupOrder.seatNo);
+        clerk.willWait();
         groupOrder.servedNum += 1;
         if(groupOrder.servedNum == groupOrder.num){ //配膳し終わった
             cookedMenus[0] -= groupOrder.menuA;
             cookedMenus[1] -= groupOrder.menuB;
             seatConfiguration[groupOrder.seatNo].eatStart(worldTime);
             groupOrderList.shift();
-            //console.log("served!");
-            return 1
+            console.log("served to "+groupOrder.seatNo+": end!");
+            return 2;
         }
-        //console.log("served to "+groupOrder.seatNo+" : "+groupOrder.servedNum);
-        return 1;
+        console.log("served to "+groupOrder.seatNo+": "+groupOrder.servedNum+"/"+groupOrder.num);
+        return 2;
     }else{
         return -2;
     }
@@ -367,19 +370,19 @@ function PeopleViewUpdate(visitors, seatConfiguration, payers, clerks){
             colorReset(clerkView.querySelector(".wait"), 0);
         }
         let seatNo = -1;
-        if(doing == 1 || //仕事中
-           doing == 2 ||
-           doing == 4){
+        let state = 0;
+        if(doing > 0 && doing <= 3){ //仕事中
             seatNo = clerk.going;
+            state = doing
         }
         for(let i = 0; i < seatConfiguration.length; ++i){
             if(i == seatNo){ //向かっている席番のみ
-                colorReset(clerkView.querySelector(".go"+i), 1);
+                colorReset(clerkView.querySelector(".go"+i), state);
             }else{
                 colorReset(clerkView.querySelector(".go"+i), 0);
             }
         }
-        if(doing == 3){
+        if(doing == 4){
             colorReset(clerkView.querySelector(".goRegister"), 1);
         }else{
             colorReset(clerkView.querySelector(".goRegister"), 0);
@@ -464,7 +467,6 @@ function setup(){
 
 function main(){ //メインの処理
     console.log("time:"+worldTime);
-
     //TODO:店員概念の追加
     //店員の動き
     for(const [index, clerk] of clerks.entries()){//各店員について
@@ -474,24 +476,26 @@ function main(){ //メインの処理
                 if(clerk.priority[i] == 1){
                     resurt = directToSeat(visitors, seatConfiguration, clerk);
                 }else if(clerk.priority[i] == 2){
-    
+                    resurt = serve(groupOrderList, cookedMenus, seatConfiguration, clerk);
                 }else if(clerk.priority[i] == 3){
     
                 }else if(clerk.priority[i] == 4){
                     
                 }
+                if(resurt > 0){ 
+                    console.log("clerk"+index+" do: "+resurt);
+                    break; 
+                }
             }
         }else if(clerk.doing == 1){
             takeOrders(seatConfiguration[clerk.going].visitors, groupOrderList, clerk);
+            console.log("clerk"+index+" do: 1");
         }
     }
 
-    directToSeat(visitors, seatConfiguration, groupOrderList);
-    //takeOrders(customers, groupOrderList, seatNo);
     account(payers, total);
     cleaning(seatConfiguration);
     //cleaned(seatConfiguration, seatNo);
-    serve(groupOrderList, cookedMenus, seatConfiguration);
 
     //TODO:料理量調整の追加
     for(const cookingMenu of cookingMenus){
