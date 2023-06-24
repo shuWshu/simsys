@@ -1,7 +1,7 @@
 // --------- parameter -----------
 const VISIT_RATE = 0.1; //各コマでの来客率
 const VISIT_NUM = [4, 4, 2, 2, 1, 1];
-const CPS = 3; //1秒間に何コマ進むか
+const CPS = 1; //1秒間に何コマ進むか
 const VISITROS_SHOW = 10; //順番待ちの描画数
 const PAYERS_SHOW = 5;
 const TIME_LIMIT = 3 * 60 * 3;
@@ -126,7 +126,7 @@ const payers = []; //会計待ちのグループ
 //店員
 class Clerk{
     constructor(priority){
-        this.doing = 0; //何をしているか 0:待機, 1:案内中, 2:配膳中, 3:レジ中, 4:掃除中
+        this.doing = 0; //何をしているか 0:待機, 1:案内中, 2:配膳中, 3:掃除中, 4:レジ
         this.going = -1; //向かってる席のインデックス 待機とレジは-1
         this.priority = priority; //仕事の優先順位
         this.waitFrag = false; //次のターン待機する合図
@@ -291,21 +291,25 @@ function calculateMenuB(menuB){
     return menuB * 400;
 }
 
+//店員タスク:3
 //席の掃除開始
 //インデックスが若い席のみ掃除する
-function cleaning(seatConfiguration){
+//掃除したら3, しなかったら-1を返す
+function cleaning(seatConfiguration, clerk){
     for(const [index, seat] of seatConfiguration.entries()){ //各座席について index:インデックス seat:席そのもの
         if(seat.state == 3){ //席が片付け待ち
             seat.cleaning(); //席掃除
-            return 1;
+            clerk.setDoing(3, index);
+            return 3;
         }
     }
     return -1;
 }
 
 //席の掃除終了
-function cleaned(seatConfiguration, seatNo){
-    seatConfiguration[seatNo].cleaned(); //掃除終了
+function cleaned(seatConfiguration, clerk){
+    seatConfiguration[clerk.going].cleaned(); //掃除終了
+    clerk.willWait();
 }
 
 //待機に変更
@@ -451,9 +455,9 @@ function setup(){
     // console.log(seatConfiguration); //席リスト
 
     //店員召喚
-    clerks.push(new Clerk([3, 2, 1, 4]));
-    clerks.push(new Clerk([3, 2, 1, 4]));
-    clerks.push(new Clerk([3, 2, 1, 4]));
+    clerks.push(new Clerk([4, 2, 1, 3]));
+    clerks.push(new Clerk([4, 2, 1, 3]));
+    clerks.push(new Clerk([4, 2, 1, 3]));
 
     visitCustomerNumN(visitors, 4);
     visitCustomerNumN(visitors, 2);
@@ -468,6 +472,7 @@ function setup(){
 function main(){ //メインの処理
     console.log("time:"+worldTime);
     //TODO:店員概念の追加
+    //TODO:注文を取った時にメニューができていると次のエージェントがすぐ配膳するバグあり
     //店員の動き
     for(const [index, clerk] of clerks.entries()){//各店員について
         if(clerk.doing == 0){ //待機中なら
@@ -478,23 +483,23 @@ function main(){ //メインの処理
                 }else if(clerk.priority[i] == 2){
                     resurt = serve(groupOrderList, cookedMenus, seatConfiguration, clerk);
                 }else if(clerk.priority[i] == 3){
-    
+                    resurt = cleaning(seatConfiguration, clerk);
                 }else if(clerk.priority[i] == 4){
                     
                 }
-                if(resurt > 0){ 
-                    console.log("clerk"+index+" do: "+resurt);
-                    break; 
-                }
+                if(resurt > 0){ console.log("clerk"+index+" do: "+resurt); break; } //仕事を行ったら抜ける
+                if(i == 3){ console.log("clerk"+index+" do: nan"); }
             }
         }else if(clerk.doing == 1){
             takeOrders(seatConfiguration[clerk.going].visitors, groupOrderList, clerk);
             console.log("clerk"+index+" do: 1");
+        }else if(clerk.doing == 3){
+            cleaned(seatConfiguration, clerk);
+            console.log("clerk"+index+" do: 3");
         }
     }
 
     account(payers, total);
-    cleaning(seatConfiguration);
     //cleaned(seatConfiguration, seatNo);
 
     //TODO:料理量調整の追加
