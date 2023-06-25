@@ -261,9 +261,16 @@ body{
     color: white;
     background-color: transparent;
 }
-.sales{
+.group{
     position:absolute;
     top:30px;
+    left:0px;
+    color: white;
+    background-color: transparent;
+}
+.sales{
+    position:absolute;
+    top:60px;
     left:0px;
     color: white;
     background-color: transparent;
@@ -271,8 +278,8 @@ body{
 
 /* 色設定クラス */
 .color0{
-    background-color: gray;
-    color: gray;
+    background-color: #222222;
+    color: #222222;
 }
 .color1{
     background-color: white;

@@ -1,11 +1,13 @@
 // --------- parameter -----------
-const VISIT_RATE = 0.1; //各コマでの来客率
+const VISIT_RATE = 0.10; //各コマでの来客率
 const VISIT_NUM = [3, 4, 3, 2, 1, 1];
 const CPS = 30; //1秒間に何コマ進むか
 const VISITROS_SHOW = 10; //順番待ちの描画数
 const PAYERS_SHOW = 5; //会計待ちの描画数
-const TIME_LIMIT = 3 * 60 * 3; //タイムリミット n時間なら3*60*n
+const TIME_LIMIT = 3 * 60 * 5; //タイムリミット n時間なら3*60*n
 const VISITROS_START = 3; //開始時の客数
+
+let counter = 0;
 
 // --------- class ---------------
 //注文
@@ -150,7 +152,7 @@ class Clerk{
 }
 const clerks = []; //店員リスト
 
-const total = [0, 0]; //合計の 客数, 売上
+const total = [0, 0, 0]; //合計の 客数, 売上, グループ数
 let accounted = false; //会計はターン1
 
 let worldTime = 0; //シミュレータ内の時間 単位はコマ
@@ -280,6 +282,7 @@ function account(payers, total, accounted, clerk){
         total[0] += payer.num;
         total[1] += calculateMenuA(payer.num, payer.menuA);
         total[1] += calculateMenuB(payer.menuB);
+        total[2] += 1;
         //console.log(total[0]+": "+total[1]);
         //payers.shift(); //リスト先頭の客を削除 自動更新に移行
         clerk.setDoing(4, -1);
@@ -405,7 +408,7 @@ function PeopleViewUpdate(visitors, seatConfiguration, payers, clerks){
 //タイマーの表示
 function timerViewUpdate(time){
     const timer = document.querySelector("#timer");
-    timer.textContent = ("00"+Math.floor((12+time/180)%24)).slice(-2)+":"+
+    timer.textContent = ("00"+Math.floor((time/180)%24)).slice(-2)+":"+
                         ("00"+Math.floor(time/3%60)).slice(-2)+":"+
                         ("00"+(time%3)*20).slice(-2); //時間表記
 }
@@ -432,10 +435,12 @@ function dishViewUpdate(cookingMenus, cookedMenus){
     }
 }
 
+//合計の表示
 function totalViewUpdate(total){
     const totalView = document.querySelector("#total");
-    totalView.querySelector(".number").textContent = "Total number: "+total[0];
+    totalView.querySelector(".number").textContent = "Total people: "+total[0];
     totalView.querySelector(".sales").textContent = "Total sales: "+total[1];
+    totalView.querySelector(".group").textContent = "Total groups: "+total[2];
 }
 
 function colorReset(element, state){
@@ -515,10 +520,12 @@ function main(){ //メインの処理
     tentativeOrderList = [];
     for(const [index, cookingMenu] of cookingMenus.entries()){
         if(cookingMenu.amount == 0 && groupOrderList.length){ //非調理中かつオーダーがある
-            let orderAmount = 0
+            let orderAmount = 0;
             if(index == 0){ 
+                orderAmount = 0; //ボーナス
                 for(const groupOrder of groupOrderList){ orderAmount += groupOrder.menuA; }
             }else if(index == 1){
+                orderAmount = 0; //ボーナス
                 for(const groupOrder of groupOrderList){ orderAmount += groupOrder.menuB; }
             }
             const cookedAmount = cookedMenus[index];
@@ -532,6 +539,7 @@ function main(){ //メインの処理
     if(Math.random() < VISIT_RATE){
         const num = randamizer(VISIT_NUM) + 1;
         visitCustomerNumN(visitors, num);
+        counter += 1;
     } 
 
     //描画更新
@@ -554,6 +562,7 @@ function main(){ //メインの処理
     //終了判定
     toWait(clerks);
     if(worldTime == TIME_LIMIT){
+        console.log(counter);
         console.log("end");
         clearInterval(timerId);
     }
