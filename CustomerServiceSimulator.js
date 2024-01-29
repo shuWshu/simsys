@@ -1,7 +1,7 @@
 // --------- parameter -----------
 const VISIT_RATE = 0.10; //各コマでの来客率
 const VISIT_NUM = [3, 4, 3, 2, 1, 1];
-const CPS = 30; //1秒間に何コマ進むか
+const CPS = 60; //1秒間に何コマ進むか
 const VISITROS_SHOW = 10; //順番待ちの描画数
 const PAYERS_SHOW = 5; //会計待ちの描画数
 const TIME_LIMIT = 3 * 60 * 5; //タイムリミット n時間なら3*60*n
@@ -249,10 +249,10 @@ function serve(groupOrderList, cookedMenus, seatConfiguration, clerk){
             cookedMenus[1] -= groupOrder.menuB;
             seatConfiguration[groupOrder.seatNo].eatStart(worldTime);
             groupOrderList.shift();
-            console.log("served to "+groupOrder.seatNo+": end!");
+            // console.log("served to "+groupOrder.seatNo+": end!");
             return 2;
         }
-        console.log("served to "+groupOrder.seatNo+": "+groupOrder.servedNum+"/"+groupOrder.num);
+        // console.log("served to "+groupOrder.seatNo+": "+groupOrder.servedNum+"/"+groupOrder.num);
         return 2;
     }else{
         return -2;
@@ -469,8 +469,8 @@ function setup(){
 
     //店員召喚
     clerks.push(new Clerk([4, 2, 1, 3]));
-    clerks.push(new Clerk([4, 2, 1, 3]));
-    clerks.push(new Clerk([4, 2, 1, 3]));
+    //clerks.push(new Clerk([4, 2, 1, 3]));
+    //clerks.push(new Clerk([4, 2, 1, 3]));
 
     for(let i = 0; i < VISITROS_START; ++i){
         const num = randamizer(VISIT_NUM) + 1;
